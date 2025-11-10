@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title DSCEngine
@@ -21,12 +22,18 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  * as well as depositing and withdrawing collateral.
  * @notice This is contract is VERY loosely based on the MakerDAO DSS (DAI Stablecoin System).
  */
-contract DSCEngine {
+contract DSCEngine is ReentrancyGuard {
     /////////////////////
     // State Variables //
     /////////////////////
-    mapping(address token => address priceFeed) private s_priceFeeds; // Token to price feed
+    mapping(address token => address priceFeed) private s_priceFeeds; // Token -> price feed
+    mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited; // User address -> token address
     DecentralizedStableCoin private immutable i_dsc;
+
+    /////////////////////
+    //      Event      //
+    /////////////////////
+    event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
 
     /////////////////////
     //      Errors     //
@@ -34,6 +41,7 @@ contract DSCEngine {
     error DSCEngine__AmountMustBeMoreThanZero();
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DSCEngine__NotAllowedToken();
+    error DSCEngine__TransferFailed();
 
     /////////////////////
     //    Modifiers    //
@@ -75,13 +83,21 @@ contract DSCEngine {
     /**
      * @param tokenCollateralAddress The address of the token to deposit as collateral
      * @param amountCollateral The amount of collateral to deposit
-     *
+     * @notice follow CEI (Checks-Effects-Interactions) pattern
      */
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         external
         moreThanZero(amountCollateral)
         isAollowedToken(tokenCollateralAddress)
-    {}
+        nonReentrant
+    {
+        s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+        emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
+        bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+    }
 
     function redeemCollateralForDsc() external {}
 
