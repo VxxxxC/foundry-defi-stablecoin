@@ -31,6 +31,7 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50; // 200% collateralization ratio
     uint256 private constant LIQUIDATION_PRECISION = 100;
+    uint256 private constant MIN_HEALTH_FACTOR = 1;
 
     mapping(address token => address priceFeed) private s_priceFeeds; // Token -> price feed
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited; // User address -> token address
@@ -50,6 +51,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DSCEngine__NotAllowedToken();
     error DSCEngine__TransferFailed();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
 
     /////////////////////
     //    Modifiers    //
@@ -119,7 +121,7 @@ contract DSCEngine is ReentrancyGuard {
      */
     function mintDsc(uint256 amountDscToMint) external moreThanZero(amountDscToMint) {
         s_dscMinted[msg.sender] += amountDscToMint;
-        revertIfHealthFactorIsBroken(msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender);
         i_dsc.mint(msg.sender, amountDscToMint);
     }
 
@@ -150,11 +152,16 @@ contract DSCEngine is ReentrancyGuard {
     }
 
 
-    function revertIfHealthFactorIsBroken(address user) internal view {
-    // 1. check health factor 
-    // 2. Revert if they don't
-
-    
+/**
+ * 
+ * @notice 1. check health factor 
+ * @notice 2. Revert if they don't
+ */
+    function _revertIfHealthFactorIsBroken(address user) internal view {
+         uint256 userHealthFactor = _healthFactor(user);
+         if(userHealthFactor < MIN_HEALTH_FACTOR){
+           revert DSCEngine__BreaksHealthFactor(userHealthFactor); 
+         }   
     }
 
       ///////////////////////////////////////
