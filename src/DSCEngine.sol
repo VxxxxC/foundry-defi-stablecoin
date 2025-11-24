@@ -6,7 +6,7 @@ import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-
+import "forge-std/console.sol";
 /**
  * @title DSCEngine
  * @author VxxxxC
@@ -23,6 +23,7 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
  * as well as depositing and withdrawing collateral.
  * @notice This is contract is VERY loosely based on the MakerDAO DSS (DAI Stablecoin System).
  */
+
 contract DSCEngine is ReentrancyGuard {
     /////////////////////
     // State Variables //
@@ -53,6 +54,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintFailed();
+    error DSCEngine__InterfaceCastingFailed();
 
     /////////////////////
     //    Modifiers    //
@@ -186,6 +188,10 @@ contract DSCEngine is ReentrancyGuard {
 
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        if (address(priceFeed) == address(0)) {
+            revert DSCEngine__InterfaceCastingFailed();
+        }
+
         (, int256 price,,,) = priceFeed.latestRoundData();
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
