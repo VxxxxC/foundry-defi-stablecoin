@@ -46,7 +46,10 @@ contract DSCEngine is ReentrancyGuard {
     /////////////////////
     event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
     event CollateralRedeemed(
-        address indexed redeemedFrom, address indexed redeemedTo, address indexed collateralTokenAddress, uint256 indexed collateralAmount
+        address indexed redeemedFrom,
+        address indexed redeemedTo,
+        address indexed collateralTokenAddress,
+        uint256 indexed collateralAmount
     );
 
     /////////////////////
@@ -173,14 +176,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function burnDsc(uint256 amount) public moreThanZero(amount) {
-        s_dscMinted[msg.sender] -= amount;
-
-        // @param address(this) transfer the DSC to contract itself , and later will use ERC20Burnable's burn function to burn the tokens
-        bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
-        i_dsc.burn(amount);
+        _burnDsc(amount, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -195,10 +191,14 @@ contract DSCEngine is ReentrancyGuard {
      * @param user The user who has broken the health factor, The _healthFactor should be less than MIN_HEALTH_FACTOR
      * @param debtToCover The amount of DSC you want to burn , to improve the user health factor
      */
-    function liquidate(address collateral, address user, uint256 debtToCover) external moreThanZero(debtCover) nonReentrant {
+    function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtCover)
+        nonReentrant
+    {
         // Step 1: Check the health factor of the user
         uint256 startingUserHealthFactor = _healthFactor(user);
-        if(startingUserHealthFactor >= MIN_HEALTH_FACTOR){
+        if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__HealthFactorOk();
         }
         // Step 2: Burn the user DSC "debt", and take the collateral from the user
@@ -207,16 +207,17 @@ contract DSCEngine is ReentrancyGuard {
         // Step 3: Give liquidator liquidation bonus
         // liquidationBonus = 10% ($110 of WETH for $100 DSC)
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
-        
+
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
-    } 
+        _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
+    }
 
     function getHealthFactor() external {}
 
     ///////////////////////////////////////
     // Private & Internal View Functions //
     ///////////////////////////////////////
-function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral,address from, address to)
+    function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral, address from, address to)
         private
     {
         s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
@@ -226,6 +227,20 @@ function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollate
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
+    }
+
+    /**
+     * @dev Low-level internal function, do not call unless the function calling it is checking for health factors being broken
+     */
+    function _burnDsc(uint256 amountDscToBurn, address onBehalfOf, address dscFrom) private {
+        s_dscMinted[onBehalfOf] -= amountDscToBurn;
+
+        // @param address(this) transfer the DSC to contract itself , and later will use ERC20Burnable's burn function to burn the tokens
+        bool success = i_dsc.transferFrom(dscFrom, address(this), amountDscToBurn);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+        i_dsc.burn(amountDscToBurn);
     }
 
     function _getAccountInformation(address user)
@@ -283,7 +298,7 @@ function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollate
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
 
-    function getTokenAmountFromUsd(address user, uint256 usdAmountInWei) public view returns(uint256) {
+    function getTokenAmountFromUsd(address user, uint256 usdAmountInWei) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(S_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.latestRoundData();
 
