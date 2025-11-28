@@ -49,7 +49,7 @@ contract DSCEngine is ReentrancyGuard {
         address indexed redeemedFrom,
         address indexed redeemedTo,
         address indexed collateralTokenAddress,
-        uint256 indexed collateralAmount
+        uint256 collateralAmount
     );
 
     /////////////////////
@@ -63,6 +63,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__MintFailed();
     error DSCEngine__InterfaceCastingFailed();
     error DSCEngine__HealthFactorOk();
+    error DSCEngine__HealthFactorNotImproved();
 
     /////////////////////
     //    Modifiers    //
@@ -193,7 +194,7 @@ contract DSCEngine is ReentrancyGuard {
      */
     function liquidate(address collateral, address user, uint256 debtToCover)
         external
-        moreThanZero(debtCover)
+        moreThanZero(debtToCover)
         nonReentrant
     {
         // Step 1: Check the health factor of the user
@@ -207,9 +208,18 @@ contract DSCEngine is ReentrancyGuard {
         // Step 3: Give liquidator liquidation bonus
         // liquidationBonus = 10% ($110 of WETH for $100 DSC)
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
-
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
         _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
+
+        // Step 4: Burn DSC
+        _burnDsc(debtToCover, user, msg.sender);
+
+        // Step 5: Make sure the user is now healthy
+        uint256 endingUserHealthFactor = _healthFactor(user);
+        if (endingUserHealthFactor <= startingUserHealthFactor) {
+            revert DSCEngine__HealthFactorNotImproved();
+        }
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     function getHealthFactor() external {}
@@ -298,8 +308,8 @@ contract DSCEngine is ReentrancyGuard {
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
 
-    function getTokenAmountFromUsd(address user, uint256 usdAmountInWei) public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(S_priceFeeds[token]);
+    function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.latestRoundData();
 
         // (useAmountInWei * 1e18) / (price * 1e10)
