@@ -1,3 +1,5 @@
+![concept](./asset/Gemini_Generated_Image_ndi3ewndi3ewndi3.png)
+
 1. Relative Stability: Anchored or Pegged -> $1.00
    1. Chainlink Price feed.
    2. Set a function to exchange ETH & BTC -> $$$
