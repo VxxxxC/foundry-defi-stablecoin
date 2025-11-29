@@ -76,7 +76,7 @@ contract DSCEngine is ReentrancyGuard {
         _;
     }
 
-    modifier isAollowedToken(address token) {
+    modifier isAllowedToken(address token) {
         if (s_priceFeeds[token] == address(0)) {
             revert DSCEngine__NotAllowedToken();
         }
@@ -84,7 +84,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /////////////////////
-    //    Functions    //
+    //   constructor   //
     /////////////////////
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
@@ -125,7 +125,7 @@ contract DSCEngine is ReentrancyGuard {
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
-        isAollowedToken(tokenCollateralAddress)
+        isAllowedToken(tokenCollateralAddress)
         nonReentrant
     {
         s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
@@ -260,6 +260,7 @@ contract DSCEngine is ReentrancyGuard {
     {
         totalDscMinted = s_dscMinted[user];
         collateralValueInUsd = getAccountCollateralValue(user);
+        return (totalDscMinted, collateralValueInUsd);
     }
 
     /**
@@ -314,5 +315,14 @@ contract DSCEngine is ReentrancyGuard {
 
         // (useAmountInWei * 1e18) / (price * 1e10)
         return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
+    }
+
+    function getAccountInformation(address user)
+        external
+        view
+        returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+    {
+        (totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
+        return (totalDscMinted, collateralValueInUsd);
     }
 }
