@@ -50,10 +50,17 @@ contract DSCEngineTest is Test {
         vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
         new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
     }
-
     /////////////////////
     //      Tests      //
     /////////////////////
+
+    function testGetTokenAmountFromUsd() public {
+        uint256 usdAmount = 100 ether;
+        uint256 expectedWeth = 0.05 ether;
+        uint256 actualWeth = dscEngine.getTokenAmountFromUsd(weth, usdAmount);
+        assertEq(expectedWeth, actualWeth);
+    }
+
     function testGetUsdValue() public {
         uint256 ethAmount = 15e18;
         uint256 expectedUsd = 30000e18;
@@ -67,6 +74,15 @@ contract DSCEngineTest is Test {
 
         vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
         dscEngine.depositCollateral(weth, 0 ether); // Here deposit 0 ether, should revert
+        vm.stopPrank();
+    }
+
+    function testRevertsWithUnapprovedColateral() public {
+        ERC20Mock fakeToken = new ERC20Mock("Fake Token", "FAKE", USER, AMOUNT_COLLATERAL);
+        vm.startPrank(USER);
+
+        vm.expectRevert(DSCEngine.DSCEngine__NotAllowedToken.selector);
+        dscEngine.depositCollateral(address(fakeToken), AMOUNT_COLLATERAL);
         vm.stopPrank();
     }
 }
