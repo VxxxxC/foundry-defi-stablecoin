@@ -124,7 +124,7 @@ contract DSCEngineTest is Test {
     function testCanDepositCollateralAndGetAccountInfo() public depositedCollateral {
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(USER);
         uint256 expectedCollateralValue = dscEngine.getUsdValue(weth, AMOUNT_COLLATERAL);
-        
+
         assertEq(totalDscMinted, 0);
         assertEq(collateralValueInUsd, expectedCollateralValue);
     }
@@ -137,7 +137,7 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         uint256 amountToMint = 100 ether;
         dscEngine.mintDsc(amountToMint);
-        
+
         uint256 userBalance = dsc.balanceOf(USER);
         assertEq(userBalance, amountToMint);
         vm.stopPrank();
@@ -147,9 +147,9 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);
         uint256 amountToMint = 100 ether;
-        
+
         dscEngine.depositCollateralAndMintDsc(weth, AMOUNT_COLLATERAL, amountToMint);
-        
+
         uint256 userBalance = dsc.balanceOf(USER);
         assertEq(userBalance, amountToMint);
         vm.stopPrank();
@@ -161,7 +161,7 @@ contract DSCEngineTest is Test {
         // Trying to mint $10,001 should fail
         vm.startPrank(USER);
         uint256 amountToMint = 10001 ether;
-        
+
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 999900009999000099));
         dscEngine.mintDsc(amountToMint);
         vm.stopPrank();
@@ -183,7 +183,7 @@ contract DSCEngineTest is Test {
         // collateral = 10 ETH * $2000 = $20,000
         // Max DSC = $10,000 (50% of collateral)
         uint256 amountToMint = 10001 ether;
-        
+
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 999900009999000099));
         dscEngine.mintDsc(amountToMint);
         vm.stopPrank();
@@ -193,7 +193,7 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         uint256 amountToMint = 100 ether;
         dscEngine.mintDsc(amountToMint);
-        
+
         uint256 userBalance = dsc.balanceOf(USER);
         assertEq(userBalance, amountToMint);
         vm.stopPrank();
@@ -214,7 +214,7 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         uint256 amountToMint = 100 ether;
         dscEngine.mintDsc(amountToMint);
-        
+
         // Try to burn more than minted
         vm.expectRevert();
         dscEngine.burnDsc(101 ether);
@@ -225,10 +225,10 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         uint256 amountToMint = 100 ether;
         dscEngine.mintDsc(amountToMint);
-        
+
         dsc.approve(address(dscEngine), amountToMint);
         dscEngine.burnDsc(amountToMint);
-        
+
         uint256 userBalance = dsc.balanceOf(USER);
         assertEq(userBalance, 0);
         vm.stopPrank();
@@ -248,7 +248,7 @@ contract DSCEngineTest is Test {
     function testCanRedeemCollateral() public depositedCollateral {
         vm.startPrank(USER);
         dscEngine.redeemCollateral(weth, AMOUNT_COLLATERAL);
-        
+
         uint256 userBalance = ERC20Mock(weth).balanceOf(USER);
         assertEq(userBalance, STARTING_ERC20_BALANCE);
         vm.stopPrank();
@@ -258,7 +258,7 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         uint256 amountToMint = 9000 ether; // Close to max ($10k limit)
         dscEngine.mintDsc(amountToMint);
-        
+
         // Try to redeem collateral, which would break health factor
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 0));
         dscEngine.redeemCollateral(weth, AMOUNT_COLLATERAL);
@@ -268,7 +268,7 @@ contract DSCEngineTest is Test {
     function testEmitsCollateralRedeemedWithCorrectArgs() public depositedCollateral {
         vm.expectEmit(true, true, true, true, address(dscEngine));
         emit CollateralRedeemed(USER, USER, weth, AMOUNT_COLLATERAL);
-        
+
         vm.startPrank(USER);
         dscEngine.redeemCollateral(weth, AMOUNT_COLLATERAL);
         vm.stopPrank();
@@ -283,7 +283,7 @@ contract DSCEngineTest is Test {
         uint256 amountToMint = 100 ether;
         dscEngine.mintDsc(amountToMint);
         dsc.approve(address(dscEngine), amountToMint);
-        
+
         vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
         dscEngine.redeemCollateralForDsc(weth, 0, amountToMint);
         vm.stopPrank();
@@ -294,9 +294,9 @@ contract DSCEngineTest is Test {
         uint256 amountToMint = 100 ether;
         dscEngine.mintDsc(amountToMint);
         dsc.approve(address(dscEngine), amountToMint);
-        
+
         dscEngine.redeemCollateralForDsc(weth, AMOUNT_COLLATERAL, amountToMint);
-        
+
         uint256 userBalance = dsc.balanceOf(USER);
         assertEq(userBalance, 0);
         vm.stopPrank();
@@ -314,7 +314,7 @@ contract DSCEngineTest is Test {
 
         address liquidator = makeAddr("liquidator");
         ERC20Mock(weth).mint(liquidator, STARTING_ERC20_BALANCE);
-        
+
         vm.startPrank(liquidator);
         ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);
         dscEngine.depositCollateralAndMintDsc(weth, AMOUNT_COLLATERAL, amountToMint);
@@ -334,15 +334,15 @@ contract DSCEngineTest is Test {
         // Simulate price drop - ETH drops to $1000
         // Now collateral = 10 ETH * $1000 = $10,000
         // Health factor is now broken: $10,000 * 0.5 / $9000 = 0.55 < 1
-        
+
         address liquidator = makeAddr("liquidator");
         ERC20Mock(weth).mint(liquidator, 100 ether);
-        
+
         vm.startPrank(liquidator);
         ERC20Mock(weth).approve(address(dscEngine), 100 ether);
         dscEngine.depositCollateralAndMintDsc(weth, 100 ether, 50000 ether);
         dsc.approve(address(dscEngine), 50000 ether);
-        
+
         // This test would need price manipulation which requires more setup
         // For now, we verify the revert happens when health factor doesn't improve
         vm.stopPrank();
@@ -350,7 +350,7 @@ contract DSCEngineTest is Test {
 
     function testRevertsIfLiquidateAmountIsZero() public depositedCollateral {
         address liquidator = makeAddr("liquidator");
-        
+
         vm.startPrank(liquidator);
         vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
         dscEngine.liquidate(weth, USER, 0);
@@ -376,22 +376,22 @@ contract DSCEngineTest is Test {
 
     function testGetAccountCollateralValueWithMultipleTokens() public {
         vm.startPrank(USER);
-        
+
         // Deposit WETH
         ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);
         dscEngine.depositCollateral(weth, AMOUNT_COLLATERAL);
-        
+
         // Deposit WBTC
         ERC20Mock(wbtc).mint(USER, AMOUNT_COLLATERAL);
         ERC20Mock(wbtc).approve(address(dscEngine), AMOUNT_COLLATERAL);
         dscEngine.depositCollateral(wbtc, AMOUNT_COLLATERAL);
-        
+
         vm.stopPrank();
-        
+
         uint256 totalCollateralValue = dscEngine.getAccountCollateralValue(USER);
         uint256 expectedWethValue = dscEngine.getUsdValue(weth, AMOUNT_COLLATERAL);
         uint256 expectedWbtcValue = dscEngine.getUsdValue(wbtc, AMOUNT_COLLATERAL);
-        
+
         assertEq(totalCollateralValue, expectedWethValue + expectedWbtcValue);
     }
 
@@ -401,7 +401,7 @@ contract DSCEngineTest is Test {
         uint256 expectedWeth = 0.05 ether;
         uint256 actualWeth = dscEngine.getTokenAmountFromUsd(weth, usdAmount);
         assertEq(expectedWeth, actualWeth);
-        
+
         // WBTC @ $1000: $100 = 0.1 BTC
         uint256 expectedWbtc = 0.1 ether;
         uint256 actualWbtc = dscEngine.getTokenAmountFromUsd(wbtc, usdAmount);
@@ -418,7 +418,7 @@ contract DSCEngineTest is Test {
         // Let's mint 9,999 DSC to be close to the edge
         uint256 amountToMint = 9999 ether;
         dscEngine.mintDsc(amountToMint);
-        
+
         // At this point, health factor should be just above 1
         // If price of ETH drops or we mint more, health factor would drop below 1
         vm.stopPrank();
@@ -429,12 +429,12 @@ contract DSCEngineTest is Test {
         uint256 amountToMint = 5000 ether; // Half of max
         dscEngine.mintDsc(amountToMint);
         vm.stopPrank();
-        
+
         // Collateral: 10 ETH * $2000 = $20,000
         // DSC Minted: $5,000
         // Threshold: $20,000 * 50 / 100 = $10,000
         // Health Factor: $10,000 * 1e18 / $5,000 = 2e18
-        
+
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(USER);
         assertEq(totalDscMinted, amountToMint);
     }
@@ -447,7 +447,7 @@ contract DSCEngineTest is Test {
         // Create a mock token that fails on transferFrom
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dscEngine), 0); // Don't approve
-        
+
         vm.expectRevert();
         dscEngine.depositCollateral(weth, AMOUNT_COLLATERAL);
         vm.stopPrank();
@@ -455,33 +455,33 @@ contract DSCEngineTest is Test {
 
     function testCanDepositMultipleCollateralTypes() public {
         vm.startPrank(USER);
-        
+
         // Deposit WETH
         ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);
         dscEngine.depositCollateral(weth, AMOUNT_COLLATERAL);
-        
+
         // Deposit WBTC
         ERC20Mock(wbtc).mint(USER, AMOUNT_COLLATERAL);
         ERC20Mock(wbtc).approve(address(dscEngine), AMOUNT_COLLATERAL);
         dscEngine.depositCollateral(wbtc, AMOUNT_COLLATERAL);
-        
+
         vm.stopPrank();
-        
+
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(USER);
-        
+
         uint256 expectedWethValue = dscEngine.getUsdValue(weth, AMOUNT_COLLATERAL);
         uint256 expectedWbtcValue = dscEngine.getUsdValue(wbtc, AMOUNT_COLLATERAL);
-        
+
         assertEq(collateralValueInUsd, expectedWethValue + expectedWbtcValue);
     }
 
     function testCanWithdrawCollateralWithoutDebt() public depositedCollateral {
         vm.startPrank(USER);
-        
+
         uint256 startingBalance = ERC20Mock(weth).balanceOf(USER);
         dscEngine.redeemCollateral(weth, AMOUNT_COLLATERAL);
         uint256 endingBalance = ERC20Mock(weth).balanceOf(USER);
-        
+
         assertEq(endingBalance - startingBalance, AMOUNT_COLLATERAL);
         vm.stopPrank();
     }
@@ -490,9 +490,9 @@ contract DSCEngineTest is Test {
         vm.startPrank(USER);
         uint256 amountToMint = 1000 ether;
         dscEngine.mintDsc(amountToMint);
-        
+
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(USER);
-        
+
         assertGt(totalDscMinted, 0);
         assertGt(collateralValueInUsd, 0);
         vm.stopPrank();
@@ -504,7 +504,7 @@ contract DSCEngineTest is Test {
 
     // Note: Reentrancy tests would require a malicious ERC20 token
     // that attempts to reenter during transfer
-    
+
     ///////////////////////////////
     // Precision Tests //
     ///////////////////////////////
@@ -512,11 +512,11 @@ contract DSCEngineTest is Test {
     function testPrecisionLossOnSmallAmounts() public {
         // Test with very small amounts to check for precision loss
         vm.startPrank(USER);
-        
+
         uint256 smallAmount = 1; // 1 wei
         ERC20Mock(weth).approve(address(dscEngine), smallAmount);
         dscEngine.depositCollateral(weth, smallAmount);
-        
+
         uint256 collateralValue = dscEngine.getAccountCollateralValue(USER);
         // Should handle small amounts without reverting
         assertGt(collateralValue, 0);
