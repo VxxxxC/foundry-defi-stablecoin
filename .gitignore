@@ -16,3 +16,6 @@ docs/
 
 # Github Actions
 .github/
+
+# forge test / coverage
+bytecode-coverage/
