@@ -27,6 +27,23 @@ contract Handler is Test {
         wbtc = ERC20Mock(collateralTokens[1]);
     }
 
+    // mint function
+    function mintDsc(uint256 amount) public {
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(msg.sender);
+        uint256 maxDscToMint = (collateralValueInUsd / 2) - totalDscMinted;
+        if (maxDscToMint < 0) {
+            return;
+        }
+        amount = bound(amount, 0, uint256(maxDscToMint));
+        if (amount == 0) {
+            return;
+        }
+
+        vm.startPrank(msg.sender);
+        dscEngine.mintDsc(amount);
+        vm.stopPrank();
+    }
+
     // redeem collateral
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
