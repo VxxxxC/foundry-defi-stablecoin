@@ -40,8 +40,8 @@ contract Handler is Test {
     }
 
     // Helper Functions
-    function _getCollateralFromSeed(uint256 collateralSeed) private view returns(ERC20Mock){
-        if(collateralSeed % 2 == 0){
+    function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
+        if (collateralSeed % 2 == 0) {
             return weth;
         }
         return wbtc;
@@ -52,7 +52,7 @@ contract Handler is Test {
         uint256 maxCollateralToRedeem = dscEngine.getCollateralBalanceOfUser(address(collateral), msg.sender);
 
         amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
-        if(amountCollateral == 0) {
+        if (amountCollateral == 0) {
             return;
         }
         dscEngine.redeemCollateral(address(collateral), amountCollateral);
