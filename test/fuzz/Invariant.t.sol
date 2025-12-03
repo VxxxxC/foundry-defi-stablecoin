@@ -27,13 +27,13 @@ contract Invariant is Test {
 
     function invariant_protocolMustHaveMoreThanTotalSupply() public view {
         // get the value of all the collateral in the protocol
-        // compare it to all the debt (totalSupply of DSC)        
+        // compare it to all the debt (totalSupply of DSC)
         uint256 totalSupply = dsc.totalSupply();
         console.log("Total DSC Supply:", totalSupply);
 
         uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dscEngine));
         uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dscEngine));
- 
+
         uint256 wethValue = dscEngine.getUsdValue(address(weth), totalWethDeposited);
         uint256 wbtcValue = dscEngine.getUsdValue(address(wbtc), totalWbtcDeposited);
 
