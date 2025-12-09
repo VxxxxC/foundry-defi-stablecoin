@@ -18,6 +18,7 @@ contract Handler is Test {
     ERC20Mock wbtc;
 
     uint256 public timesMintIsCalled;
+    address [] public usersWithCollateralDeposited;
 
     uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 
@@ -31,8 +32,16 @@ contract Handler is Test {
     }
 
     // mint function
-    function mintDsc(uint256 amount) public {
-        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(msg.sender);
+    function mintDsc(uint256 amount, uint256 addressSeed) public {
+        console.log("Amount before Bound : ", amount);
+        if(usersWithCollateralDeposited.length == 0) {
+            return;
+        }
+        console.log("This Sender Seed is : ", addressSeed);
+        address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
+        console.log("This Sender address is : ", sender);
+
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(sender);
         uint256 maxDscToMint = (collateralValueInUsd / 2) - totalDscMinted;
         if (maxDscToMint < 0) {
             return;
@@ -41,8 +50,9 @@ contract Handler is Test {
         if (amount == 0) {
             return;
         }
+        console.log("Amount after Bound : ", amount);
 
-        vm.startPrank(msg.sender);
+        vm.startPrank(sender);
         dscEngine.mintDsc(amount);
         vm.stopPrank();
         timesMintIsCalled++;
@@ -50,14 +60,17 @@ contract Handler is Test {
 
     // redeem collateral
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        console.log("Amount Collateral before Bound : ", amountCollateral);
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
+        console.log("Amount Collateral after Bound : ", amountCollateral);
 
         vm.startPrank(msg.sender);
         collateral.mint(msg.sender, amountCollateral);
         collateral.approve(address(dscEngine), amountCollateral);
         dscEngine.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
+        usersWithCollateralDeposited.push(msg.sender);
     }
 
     // Helper Functions

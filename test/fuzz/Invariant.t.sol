@@ -15,7 +15,7 @@ contract Invariant is Test {
     DSCEngine dscEngine;
     HelperConfig helperConfig;
     DecentralizedStableCoin dsc;
-    address weth;
+    address weth; 
     address wbtc;
     Handler handler;
 
@@ -33,7 +33,6 @@ contract Invariant is Test {
         // get the value of all the collateral in the protocol
         // compare it to all the debt (totalSupply of DSC)
         uint256 totalSupply = dsc.totalSupply();
-        console.log("Total DSC Supply:", totalSupply);
 
         uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dscEngine));
         uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dscEngine));
@@ -43,6 +42,7 @@ contract Invariant is Test {
 
         console.log("Total WETH Value in USD:", wethValue);
         console.log("Total WBTC Value in USD:", wbtcValue);
+        console.log("Total DSC Supply:", totalSupply);
         console.log("Times mint called: ", handler.timesMintIsCalled());
 
         assert(wethValue + wbtcValue >= totalSupply);
