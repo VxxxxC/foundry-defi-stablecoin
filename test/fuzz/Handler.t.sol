@@ -95,7 +95,6 @@ contract Handler is Test {
         dscEngine.redeemCollateral(address(collateral), amountCollateral);
     }
 
-    
     // ! Below function will break the invariant test suit!!!
     // function updateCollateralPrice(uint96 newPrice) public {
     //     int256 newPriceInt = int256(uint256(newPrice));
