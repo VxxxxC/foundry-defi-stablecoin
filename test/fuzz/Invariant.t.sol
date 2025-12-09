@@ -47,4 +47,9 @@ contract Invariant is Test {
 
         assert(wethValue + wbtcValue >= totalSupply);
     }
+
+    function invariant_gettersShouldNotRevert() public view {
+        dscEngine.getLiquidationBonus();
+        dscEngine.getPrecision();
+    }
 }
