@@ -15,7 +15,7 @@ contract Invariant is Test {
     DSCEngine dscEngine;
     HelperConfig helperConfig;
     DecentralizedStableCoin dsc;
-    address weth; 
+    address weth;
     address wbtc;
     Handler handler;
 

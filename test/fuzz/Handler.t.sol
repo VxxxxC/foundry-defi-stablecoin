@@ -9,16 +9,17 @@ import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+import {MockV3Aggregator} from "../mocks/MockV3Aggregator.t.sol";
 
 contract Handler is Test {
     DSCEngine dscEngine;
     DecentralizedStableCoin dsc;
-
+    MockV3Aggregator public ethUsdPriceFeed;
     ERC20Mock weth;
     ERC20Mock wbtc;
 
     uint256 public timesMintIsCalled;
-    address [] public usersWithCollateralDeposited;
+    address[] public usersWithCollateralDeposited;
 
     uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 
@@ -29,12 +30,14 @@ contract Handler is Test {
         address[] memory collateralTokens = dscEngine.getCollateralTokens();
         weth = ERC20Mock(collateralTokens[0]);
         wbtc = ERC20Mock(collateralTokens[1]);
+
+        ethUsdPriceFeed = MockV3Aggregator(dscEngine.getCollateralTokenPriceFeed(address(weth)));
     }
 
     // mint function
     function mintDsc(uint256 amount, uint256 addressSeed) public {
         console.log("Amount before Bound : ", amount);
-        if(usersWithCollateralDeposited.length == 0) {
+        if (usersWithCollateralDeposited.length == 0) {
             return;
         }
         console.log("This Sender Seed is : ", addressSeed);
@@ -91,4 +94,11 @@ contract Handler is Test {
         }
         dscEngine.redeemCollateral(address(collateral), amountCollateral);
     }
+
+    
+    // ! Below function will break the invariant test suit!!!
+    // function updateCollateralPrice(uint96 newPrice) public {
+    //     int256 newPriceInt = int256(uint256(newPrice));
+    //     ethUsdPriceFeed.updateAnswer(newPriceInt);
+    // }
 }
