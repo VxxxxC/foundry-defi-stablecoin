@@ -13,8 +13,11 @@ import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 contract Handler is Test {
     DSCEngine dscEngine;
     DecentralizedStableCoin dsc;
+
     ERC20Mock weth;
     ERC20Mock wbtc;
+
+    uint256 public timesMintIsCalled;
 
     uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 
@@ -42,6 +45,7 @@ contract Handler is Test {
         vm.startPrank(msg.sender);
         dscEngine.mintDsc(amount);
         vm.stopPrank();
+        timesMintIsCalled++;
     }
 
     // redeem collateral

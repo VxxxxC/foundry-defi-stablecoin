@@ -43,6 +43,7 @@ contract Invariant is Test {
 
         console.log("Total WETH Value in USD:", wethValue);
         console.log("Total WBTC Value in USD:", wbtcValue);
+        console.log("Times mint called: ", handler.timesMintIsCalled());
 
         assert(wethValue + wbtcValue >= totalSupply);
     }
