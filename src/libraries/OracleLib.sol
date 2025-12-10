@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {console} from "forge-std/console.sol";
 
 /**
  * @title OracleLib
@@ -21,10 +22,18 @@ library OracleLib {
         view
         returns (uint80, int256, uint256, uint256, uint80)
     {
+        /**
+         * @roundId The round ID.
+         * @answer The price.
+         * @startedAt The timestamp when the round started.
+         * @updatedAt The timestamp when the round was updated.
+         * @answeredInRound The round ID of the round in which the answer was computed.
+         */
         (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) =
             priceFeed.latestRoundData();
 
         uint256 secondsSince = block.timestamp - updatedAt;
+        // console.log("predicted timeout : " , TIMEOUT);
         if (secondsSince > TIMEOUT) revert OracleLib__StalePrice();
         return (roundId, answer, startedAt, updatedAt, answeredInRound);
     }
