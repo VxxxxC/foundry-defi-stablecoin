@@ -1,0 +1,7 @@
+- Making a high-level description and picture of the project for better understanding the logic of the repository.
+- For analyzing the whole project structure, functions and logic flow
+- Point out the project Cons and Pros
+- Update README.md file on every git commit with a high-level description and picture of the project for better understanding the logic of the repository.
+- Every time git commit is made , analyze the functions and logic flow of the project and update README.md file accordingly.
+- Create or update a suitable mermaid diagram to represent the project structure and logic flow visually in the README.md file.
+- Create or update a table of the project knowns bugs or vulnerabilities in the README.md file.

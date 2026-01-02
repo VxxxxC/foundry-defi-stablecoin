@@ -69,7 +69,7 @@ contract DSCEngine is ReentrancyGuard {
     /////////////////////
     //      Type       //
     /////////////////////
-    using OracleLib for AggregatorV3Interface;
+    using OracleLib for AggregatorV3Interface; // NOTE: snytax `using` is meaning we can now call the functions of OracleLib on any AggregatorV3Interface type
 
     /////////////////////
     //    Modifiers    //
